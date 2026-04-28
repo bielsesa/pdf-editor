@@ -1,0 +1,10 @@
+# IDE
+.vs/
+.vscode/
+
+# Build output
+**/bin/
+**/obj/
+
+# Claude Code — keep settings.json (shared config), exclude local overrides
+.claude/settings.local.json
