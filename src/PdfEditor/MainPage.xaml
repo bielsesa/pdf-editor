@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="PdfEditor.MainPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:infra="clr-namespace:PdfEditor.Infrastructure"
+    xmlns:vm="clr-namespace:PdfEditor.ViewModels"
+    x:DataType="vm:MainViewModel">
+
+    <ContentPage.Resources>
+        <infra:InverseBoolConverter x:Key="InverseBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="52,*">
+
+        <!-- ── Toolbar ───────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="{StaticResource ToolbarBackgroundBrush}"
+                Padding="8,0"
+                StrokeThickness="0">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto">
+
+                <Button Grid.Column="0"
+                        Text="☰"
+                        Style="{StaticResource ToolbarButton}"
+                        Command="{Binding TogglePanelCommand}"
+                        ToolTipProperties.Text="Toggle page panel" />
+
+                <Button Grid.Column="1"
+                        Text="Open"
+                        Style="{StaticResource ToolbarButton}"
+                        Command="{Binding OpenFileCommand}"
+                        ToolTipProperties.Text="Open PDF file" />
+
+                <Button Grid.Column="2"
+                        Text="Save"
+                        Style="{StaticResource ToolbarButton}"
+                        Command="{Binding SaveCommand}"
+                        ToolTipProperties.Text="Save to current file" />
+
+                <Button Grid.Column="3"
+                        Text="Save As"
+                        Style="{StaticResource ToolbarButton}"
+                        Command="{Binding SaveAsCommand}"
+                        ToolTipProperties.Text="Save to a new file" />
+
+                <Button Grid.Column="4"
+                        Text="+ Add Pages"
+                        Style="{StaticResource ToolbarButton}"
+                        Command="{Binding AddPagesCommand}"
+                        ToolTipProperties.Text="Append all pages from another PDF" />
+
+                <Label Grid.Column="5"
+                       Text="{Binding DocumentTitle}"
+                       TextColor="{StaticResource ToolbarTextColor}"
+                       FontSize="13"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
+
+                <Label Grid.Column="6"
+                       Text="{Binding CurrentPageInfo}"
+                       TextColor="{StaticResource TextSecondaryColor}"
+                       FontSize="12"
+                       VerticalOptions="Center"
+                       Margin="0,0,12,0" />
+            </Grid>
+        </Border>
+
+        <!-- ── Content area ──────────────────────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+
+            <!-- Page panel -->
+            <Border Grid.Column="0"
+                    IsVisible="{Binding IsPanelVisible}"
+                    Background="{StaticResource PanelBackgroundBrush}"
+                    Stroke="{StaticResource BorderBrush}"
+                    StrokeThickness="1"
+                    WidthRequest="210">
+                <Border.StrokeShape>
+                    <Rectangle />
+                </Border.StrokeShape>
+
+                <CollectionView ItemsSource="{Binding Pages}"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PageItemViewModel">
+                            <Border Style="{StaticResource PageCard}">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border"
+                                                 Binding="{Binding IsSelected}"
+                                                 Value="True">
+                                        <Setter Property="Background"
+                                                Value="{StaticResource SelectedBackgroundBrush}" />
+                                        <Setter Property="Stroke"
+                                                Value="{StaticResource AccentBrush}" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+
+                                <VerticalStackLayout Spacing="4">
+                                    <VerticalStackLayout.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding SelectCommand}" />
+                                    </VerticalStackLayout.GestureRecognizers>
+
+                                    <!-- Thumbnail -->
+                                    <Border StrokeShape="RoundRectangle 3"
+                                            Stroke="{StaticResource BorderBrush}"
+                                            StrokeThickness="1"
+                                            HeightRequest="170"
+                                            HorizontalOptions="Fill"
+                                            Background="White">
+                                        <Image Source="{Binding Thumbnail}"
+                                               Aspect="AspectFit" />
+                                    </Border>
+
+                                    <!-- Page number -->
+                                    <Label Text="{Binding PageNumber, StringFormat='Page {0}'}"
+                                           Style="{StaticResource SecondaryLabel}"
+                                           HorizontalOptions="Center" />
+
+                                    <!-- Action buttons -->
+                                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="4">
+                                        <Button Text="↑"
+                                                Style="{StaticResource IconButton}"
+                                                Command="{Binding MoveUpCommand}"
+                                                ToolTipProperties.Text="Move page up" />
+                                        <Button Text="↓"
+                                                Style="{StaticResource IconButton}"
+                                                Command="{Binding MoveDownCommand}"
+                                                ToolTipProperties.Text="Move page down" />
+                                        <Button Text="✕"
+                                                Style="{StaticResource DangerButton}"
+                                                Command="{Binding DeleteCommand}"
+                                                ToolTipProperties.Text="Delete this page" />
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </Border>
+
+            <!-- Main viewer -->
+            <Grid Grid.Column="1">
+
+                <!-- Empty state -->
+                <VerticalStackLayout IsVisible="{Binding IsDocumentOpen, Converter={StaticResource InverseBoolConverter}}"
+                                     VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="12">
+                    <Label Text="📄"
+                           FontSize="56"
+                           HorizontalOptions="Center" />
+                    <Label Text="Open a PDF file to get started"
+                           FontSize="16"
+                           TextColor="{StaticResource TextSecondaryColor}"
+                           HorizontalOptions="Center" />
+                    <Button Text="Open File"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding OpenFileCommand}"
+                            HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
+                <!-- Page viewer -->
+                <ScrollView IsVisible="{Binding IsDocumentOpen}">
+                    <Image Source="{Binding CurrentPageImage}"
+                           Aspect="AspectFit"
+                           Margin="24"
+                           HorizontalOptions="Center" />
+                </ScrollView>
+
+                <!-- Loading overlay -->
+                <Grid IsVisible="{Binding IsBusy}" InputTransparent="True">
+                    <BoxView Color="Black" Opacity="0.15" />
+                    <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="Center"
+                                       WidthRequest="48"
+                                       HeightRequest="48" />
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+
+</ContentPage>
